@@ -14,26 +14,29 @@ defmodule RPS do
   def paper, do: @paper
   def scissors, do: @scissors
 
-  def regrets_for_action(our_action, opponent_action) do
-    temp = List.duplicate(0, @actions_count)
-
+  def value_for_action(our_action, opponent_action) do
     cond do
-      # all ties
-      our_action == opponent_action ->
-        temp = List.replace_at(temp, our_action-1, -1)
-        List.replace_at(temp, our_action-@actions_count+1, +1)
+      # win
+      our_action - opponent_action == 1 -> 1
+      our_action - opponent_action == -2 -> 1
 
-      # all wins
-      rem(our_action - opponent_action + 3, 3) == 1 ->
-        temp = List.replace_at(temp, our_action-1, -1)
-        List.replace_at(temp, our_action-@actions_count+1, -2)
+      # tie
+      opponent_action == our_action -> 0
 
-      # all losses
-      rem(opponent_action - our_action + 3, 3) == 1 ->
-        temp = List.replace_at(temp, our_action-1, 2)
-        List.replace_at(temp, our_action-@actions_count+1, 1)
+      # lose
+      true -> -1
     end
+  end
 
+  def compute_play(our_action, opponent_action, old_regrets \\ List.duplicate(0, @actions_count)) do
+    new_regrets = regrets_for_action(our_action, opponent_action)
+    for i <- 0..(@actions_count-1), do: Enum.at(new_regrets, i) + Enum.at(old_regrets, i)
+  end
+
+  def regrets_for_action(our_action, opponent_action) do
+    values = for option <- 0..(@actions_count-1), do: value_for_action(option, opponent_action)
+    experienced = Enum.at(values, our_action)
+    Enum.map(values, fn(val) -> val - experienced end)
   end
 
   # aka, "normalize list based on sum"
@@ -62,10 +65,11 @@ defmodule RPS do
   end
 
   # [1, 2, 4, 6] --> [1, 3, 7, 13]
-  # throwing a warning right now because of clauses and default values
+  # TODO: get rid of warning
   def accumulate([ head | tail ], sum \\ 0) do
     [ head + sum | accumulate(tail, head + sum) ]
   end
-  def accumulate([], num) do [] end
+
+  def accumulate([], _num) do [] end
 
 end

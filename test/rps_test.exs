@@ -30,16 +30,32 @@ defmodule RPSTest do
   test "compute regret of first action in light of second action" do
     # [rock, paper, scissors]
     # [0, 1, 2]
-    assert RPS.regrets_for_action(RPS.rock, RPS.paper) ==       [0,  1,  2]
-    assert RPS.regrets_for_action(RPS.rock, RPS.rock) ==        [0,  1, -1]
-    assert RPS.regrets_for_action(RPS.rock, RPS.scissors) ==    [0, -2, -1]
+    assert RPS.regrets_for_action(RPS.rock, RPS.paper) ==    [0,  1,  2]
+    assert RPS.regrets_for_action(RPS.rock, RPS.rock) ==     [0,  1, -1]
+    assert RPS.regrets_for_action(RPS.rock, RPS.scissors) == [0, -2, -1]
 
-    assert RPS.regrets_for_action(RPS.paper, RPS.rock) ==       [-1, 0, -2]
-    assert RPS.regrets_for_action(RPS.paper, RPS.paper) ==      [-1, 0,  1]
-    assert RPS.regrets_for_action(RPS.paper, RPS.scissors) ==   [ 2, 0,  1]
+    assert RPS.regrets_for_action(RPS.paper, RPS.rock) ==     [-1, 0, -2]
+    assert RPS.regrets_for_action(RPS.paper, RPS.paper) ==    [-1, 0,  1]
+    assert RPS.regrets_for_action(RPS.paper, RPS.scissors) == [ 2, 0,  1]
 
     assert RPS.regrets_for_action(RPS.scissors, RPS.rock) ==     [ 1,  2, 0]
     assert RPS.regrets_for_action(RPS.scissors, RPS.scissors) == [ 1, -1, 0]
     assert RPS.regrets_for_action(RPS.scissors, RPS.paper) ==    [-2, -1, 0]
+  end
+
+  test "sums continuous regrets over manual plays" do
+    regrets = RPS.compute_play(RPS.rock, RPS.paper) #
+    assert regrets == [0,  1,  2]
+
+    regrets = RPS.compute_play(RPS.rock, RPS.rock, regrets)
+    assert regrets == [0,  2, 1]
+
+    regrets = RPS.compute_play(RPS.rock, RPS.scissors, regrets)
+    assert regrets == [0, 0, 0]
+  end
+
+  @tag :skip
+  test "choose an action based on the cumulative regret" do
+    {action, regrets, seed} = RPS.play([0, 0, 0])
   end
 end
