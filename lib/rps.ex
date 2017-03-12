@@ -28,9 +28,42 @@ defmodule RPS do
     end
   end
 
-  def compute_play(our_action, opponent_action, old_regrets \\ List.duplicate(0, @actions_count)) do
-    new_regrets = regrets_for_action(our_action, opponent_action)
-    for i <- 0..(@actions_count-1), do: Enum.at(new_regrets, i) + Enum.at(old_regrets, i)
+  def opponent_action do
+    {action, seed} = [0.36, 0.32, 0.32] |> action_for_strategy
+    action
+  end
+
+  def play(
+    times \\ 0,
+    regrets \\ List.duplicate(0, 3),
+    action_history \\ List.duplicate(0, 3),
+    strategy_sum \\ List.duplicate(0, 3)
+  ) when is_list(regrets) do
+    cond do
+      times > 0 ->
+        strategy = regrets |> strategy_for_regrets
+
+        {our_action, seed} = strategy
+          |> strategy_for_regrets
+          |> action_for_strategy
+
+        new_regrets = our_action
+          |> (fn(a) -> regrets_for_action(a, opponent_action) end).()
+          |> (fn(r) -> elementwise_sum(r, regrets) end).()
+
+        play(
+           times - 1,
+           new_regrets,
+           action_history ++ [our_action],
+           elementwise_sum(strategy_sum, strategy)
+        )
+
+      true -> {regrets, action_history, strategy_sum}
+    end
+  end
+
+  def elementwise_sum(list1, list2) do
+    for i <- 0..(length(list1)-1), do: Enum.at(list1, i) + Enum.at(list2, i)
   end
 
   def regrets_for_action(our_action, opponent_action) do
@@ -41,22 +74,22 @@ defmodule RPS do
 
   # aka, "normalize list based on sum"
   def strategy_for_regrets(regrets) when is_list(regrets) do
-    sum = Enum.sum(regrets)
-    Enum.map(regrets, fn(x) -> x/sum end)
+    sum = Enum.filter(regrets, fn(r) -> r > 0 end) |> Enum.sum
+
+    if sum > 0 do
+      Enum.map(regrets, fn(x) -> if x > 0, do: x/sum, else: 0 end)
+    else
+      List.duplicate(1/length(regrets), length(regrets))
+    end
   end
 
   def action_for_strategy(strategy) when is_list(strategy) do
     strategy
       |> accumulate
-      |> choose_action_uniform
+      |> choose_action_with_index
   end
 
-  def choose_action_uniform(distribution) when is_list(distribution) do
-    seed = :rand.uniform
-    choose_action_with_index(distribution, seed)
-  end
-
-  def choose_action_with_index([ head | tail ], seed, count \\ 0) do
+  def choose_action_with_index([ head | tail ], seed \\ :rand.uniform, count \\ 0) do
     if head >= seed do
       {count, seed}
     else
@@ -70,6 +103,7 @@ defmodule RPS do
     [ head + sum | accumulate(tail, head + sum) ]
   end
 
-  def accumulate([], _num) do [] end
-
+  def accumulate([], sum) do
+    []
+  end
 end

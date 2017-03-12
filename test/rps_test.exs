@@ -23,8 +23,16 @@ defmodule RPSTest do
     assert RPS.choose_action_with_index(dist, 0.8) == {2, 0.8}
   end
 
-  test "given accumulated regrets, yield strategy" do
+  test "accumulates arrays" do
+    assert RPS.accumulate([1, 2, 3]) == [1, 3, 6]
+    assert RPS.accumulate([]) == []
+    assert RPS.accumulate([0]) == [0]
+  end
+
+  test "given various regrets, yield strategy" do
     assert RPS.strategy_for_regrets([3, 1, 4]) == [3/8, 1/8, 4/8]
+    assert RPS.strategy_for_regrets([0, 0, 0]) == [1/3, 1/3, 1/3]
+    assert RPS.strategy_for_regrets([-3, 1, 1]) == [0, 1/2, 1/2]
   end
 
   test "compute regret of first action in light of second action" do
@@ -43,19 +51,17 @@ defmodule RPSTest do
     assert RPS.regrets_for_action(RPS.scissors, RPS.paper) ==    [-2, -1, 0]
   end
 
-  test "sums continuous regrets over manual plays" do
-    regrets = RPS.compute_play(RPS.rock, RPS.paper) #
-    assert regrets == [0,  1,  2]
-
-    regrets = RPS.compute_play(RPS.rock, RPS.rock, regrets)
-    assert regrets == [0,  2, 1]
-
-    regrets = RPS.compute_play(RPS.rock, RPS.scissors, regrets)
-    assert regrets == [0, 0, 0]
-  end
-
-  @tag :skip
   test "choose an action based on the cumulative regret" do
-    {action, regrets, seed} = RPS.play([0, 0, 0])
+    {regrets, action_history, strategy_sum} = RPS.play(200)
+
+    filter_by_action = fn(index) ->
+      Enum.filter(action_history, fn(x) -> x == index end)
+    end
+
+    IO.inspect(['rocks: ', filter_by_action.(0) |> length])
+    IO.inspect(['paper: ', filter_by_action.(1) |> length])
+    IO.inspect(['scissors: ', filter_by_action.(2) |> length])
+    IO.inspect(['regrets: ', regrets])
+    IO.inspect(['strategy_sum: ', strategy_sum])
   end
 end
