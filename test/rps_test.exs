@@ -63,5 +63,6 @@ defmodule RPSTest do
     IO.inspect(['scissors: ', filter_by_action.(2) |> length])
     IO.inspect(['regrets: ', regrets])
     IO.inspect(['strategy_sum: ', strategy_sum])
+    IO.inspect(['average strategy: ', RPS.average_strategy(strategy_sum)])
   end
 end

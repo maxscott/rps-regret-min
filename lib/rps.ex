@@ -29,7 +29,7 @@ defmodule RPS do
   end
 
   def opponent_action do
-    {action, seed} = [0.36, 0.32, 0.32] |> action_for_strategy
+    {action, seed} = [0.4, 0.3, 0.3] |> action_for_strategy
     action
   end
 
@@ -70,6 +70,16 @@ defmodule RPS do
     values = for option <- 0..(@actions_count-1), do: value_for_action(option, opponent_action)
     experienced = Enum.at(values, our_action)
     Enum.map(values, fn(val) -> val - experienced end)
+  end
+
+  def average_strategy(strategy_sum) when is_list(strategy_sum) do
+    sum = strategy_sum |> Enum.sum
+
+    if sum > 0 do
+      Enum.map(strategy_sum, fn(x) -> if x > 0, do: x/sum, else: 0 end)
+    else
+      List.duplicate(1/length(strategy_sum), length(strategy_sum))
+    end
   end
 
   # aka, "normalize list based on sum"
