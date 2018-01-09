@@ -28,8 +28,8 @@ defmodule RPS do
     end
   end
 
-  def opponent_action do
-    {action, seed} = [0.4, 0.3, 0.3] |> action_for_strategy
+  def get_opponent_action do
+    {action, _seed} = [0.4, 0.3, 0.3] |> action_for_strategy
     action
   end
 
@@ -43,12 +43,12 @@ defmodule RPS do
       times > 0 ->
         strategy = regrets |> strategy_for_regrets
 
-        {our_action, seed} = strategy
+        {our_action, _seed} = strategy
           |> strategy_for_regrets
           |> action_for_strategy
 
         new_regrets = our_action
-          |> (fn(a) -> regrets_for_action(a, opponent_action) end).()
+          |> (fn(a) -> regrets_for_action(a, get_opponent_action()) end).()
           |> (fn(r) -> elementwise_sum(r, regrets) end).()
 
         play(
@@ -108,12 +108,12 @@ defmodule RPS do
   end
 
   # [1, 2, 4, 6] --> [1, 3, 7, 13]
-  # TODO: get rid of warning
-  def accumulate([ head | tail ], sum \\ 0) do
-    [ head + sum | accumulate(tail, head + sum) ]
-  end
-
-  def accumulate([], sum) do
-    []
+  def accumulate(values, sum \\ 0) when is_list(values) do
+    if (length(values) == 0) do
+      []
+    else
+      [ head | tail ] = values
+      [ head + sum | accumulate(tail, head + sum) ]
+    end
   end
 end
